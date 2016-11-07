@@ -192,7 +192,7 @@
         }
         
         // variable to decide which colors button is switching
-          var colorBool = false;
+        var colorBool = false;
           
         // function to swap colors
         var swapColor = function() {
@@ -204,7 +204,7 @@
           colorBool = !colorBool;
 
           // new colors
-          if(colorBool) {
+          if(colorBool == true) {
             // change the scale for the legend
             xAxis.tickFormat(function(d) { return d >= 200 ? formatNumber(d) : null; });
 
@@ -241,8 +241,14 @@
           g.call(xAxis);
           
           // update map colors
-          d3.select(".tract").selectAll("path")
-          .style("fill", function(d) { console.log(d);return color(d.key); });
+          svg.append("g")
+		    .selectAll("path")
+		      .data(d3.nest()
+		        .key(function(d) { return color(d.properties.population / d.properties.area * 2.58999e6); })
+		        .entries(tracts.features.filter(function(d) { return d.properties.area; })))
+		    .enter().append("path")
+		      .style("fill", function(d) { return d.key; })
+		      .attr("d", function(d) { return path({type: "FeatureCollection", features: d.values}); });
         }
         
         
