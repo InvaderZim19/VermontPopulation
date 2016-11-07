@@ -27,6 +27,18 @@
 		  stroke: #000;
 		  stroke-opacity: .3;
 		}
+        
+        .state-border {
+          fill: none;
+          stroke: #000;
+          stroke-opacity: 1;
+        }
+      
+        .tract-border {
+          fill: none;
+          stroke: #000;
+          stroke-opacity: .3;
+        }
     </style>
   </head>
   <body>
@@ -43,18 +55,22 @@
         // comma formatting
 		var formatNumber = d3.format(",d");
 
+        // map path
 		var path = d3.geo.path()
 		    .projection(null);
-        
+      
         // creating one set of colors
-		var color = d3.scale.threshold()
+		var color1 = d3.scale.threshold()
 		    .domain([1, 10, 50, 100, 500, 1000, 2000, 5000])
-		    .range(["#fff7ec", "#fee8c8", "#fdd49e", "#fdbb84", "#fc8d59", "#ef6548", "#d7301f", "#b30000", "#7f0000"]);
+		    .range(["#fee8c8", "#fdd49e", "#fdbb84", "#fc8d59", "#ef6548", "#d7301f", "#b30000", "#7f0000"]);
         
         // the other set of colors to swtich to
         var color2 = d3.scale.threshold()
-            .domain([10, 25, 50, 100, 525, 1000, 2500, 5000])
+            .domain([1, 10, 25, 50, 200, 525, 1000, 2500, 5000])
             .range(["#C8E6C9", "#A5D6A7", "#81C784", "#66BB6A", "#4CAF50", "#43A047", "#388E3C", "#2E7D32", "#1B5E20"]);
+      
+        // initialize color to be the original
+        var color = color1;
 
 		// A position encoding for the key only.
 		var x = d3.scale.linear()
@@ -79,7 +95,7 @@
 		    .attr("class", "key")
 		    .attr("transform", "translate(20,850)");
         
-        // draw the legend's boxes
+        // draw the legend's boxes along with coloring them
 		g.selectAll("rect")
 		    .data(color.range().map(function(d, i) {
 		      return {
@@ -99,12 +115,20 @@
 		    .attr("class", "caption")
 		    .attr("y", -6)
 		    .text("Population per square mile");
+        
+        // init the tracts to null, to avoid any problems pulling the tracts
+        // from the data
+        var tracts = null;
+        var vermont = null;
 
         // parse the vermont json file which has the counties and tracts
 		d3.json("vt.json", function(error, vt) {
 		  if (error) throw error;
-
-		  var tracts = topojson.feature(vt, vt.objects.tracts);
+          
+          // keep track of the vt object to manipulate in other functions
+          vermont = vt;
+          
+		  tracts = topojson.feature(vt, vt.objects.tracts);
 
 		  // Clip tracts to land.
 		  svg.append("defs").append("clipPath")
@@ -130,10 +154,108 @@
 		      .datum(topojson.mesh(vt, vt.objects.counties, function(a, b) { return a !== b; }))
 		      .attr("class", "county-border")
 		      .attr("d", path);
+          
 		});
+      
+        // don't show tract bounds to begin
+        var toggleCB = false;
+      
+        // toggle bounds for counties
+        var countyBounds = function() {
+          toggleCB = !toggleCB;
+          
+          if(toggleCB == true) {
+            svg.append("path")
+                .datum(topojson.mesh(vermont, vermont.objects.tracts, function(i, j) { return i !== j; }))
+                .attr("class", "tract-border")
+                .attr("d", path);
+          } else {
+            d3.selectAll(".tract-border").remove();
+          }
+        }
+        
+        // don't show state bounds to begin
+        var toggleSB = false;
+      
+        // toggle state bounds
+        var stateBounds = function() {
+          toggleSB = !toggleSB;
+          
+          if(toggleSB == true) {
+            svg.append("path")
+                .datum(topojson.mesh(vermont, vermont.objects.tracts, function(i, j) { return i === j; }))
+                .attr("class", "state-border")
+                .attr("d", path);
+          } else {
+            d3.selectAll(".state-border").remove();
+          }
+        }
+        
+        // variable to decide which colors button is switching
+          var colorBool = false;
+          
+        // function to swap colors
+        var swapColor = function() {
+
+          // remove legend first, changes won't show up otherwise
+          g.selectAll("rect").remove();
+
+          // swap the current state of the boolean
+          colorBool = !colorBool;
+
+          // new colors
+          if(colorBool) {
+            // change the scale for the legend
+            xAxis.tickFormat(function(d) { return d >= 200 ? formatNumber(d) : null; });
+
+            // change the color
+            color = color2;
+          // old colors
+          } else {
+            // change the scale for the legend
+            xAxis.tickFormat(function(d) { return d >= 100 ? formatNumber(d) : null; });
+
+            // change the color
+            color = color1;
+          }
+
+          // redraw the legend
+          g.selectAll("rect")
+          .data(color.range().map(function(d, i) {
+            return {
+              x0: i ? x(color.domain()[i - 1]) : x.range()[0],
+              x1: i < color.domain().length ? x(color.domain()[i]) : x.range()[1],
+              z: d
+            };
+          }))
+          .enter().append("rect")
+            .attr("height", 8)
+            .attr("x", function(d) { return d.x0; })
+            .attr("width", function(d) { return d.x1 - d.x0; })
+            .style("fill", function(d) { return d.z; });
+        
+          // reset the tick values
+          xAxis.tickValues(color.domain());
+          
+          // call the xAxis again
+          g.call(xAxis);
+          
+          // update map colors
+          d3.select(".tract").selectAll("path")
+          .style("fill", function(d) { console.log(d);return color(d.key); });
+        }
+        
+        
 
 		d3.select(self.frameElement).style("height", height + "px");
     </script>
+    
+    <div class="buttons">
+      <button onClick="swapColor();">Toggle Legend Colors</button>
+      <button onClick="stateBounds();">Toggle State Bounds</button>
+      <button onClick="countyBounds();">Toggle County Bounds</button>
+    </div>
+    
     <!-- Submission Info -->
     <div id="context"></div>
     <h4>Created by Karl Cassel </h4>
@@ -144,6 +266,7 @@
     <ul>
 
       <li> <a href="https://bl.ocks.org/mbostock/5562380">Mike Bostock's California Visualization</a></li>
+      <li> Got help from Tristan Iverson </li>
     </ul>
       
   </body>
