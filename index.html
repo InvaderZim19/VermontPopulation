@@ -237,10 +237,12 @@
           // reset the tick values
           xAxis.tickValues(color.domain());
           
-          // call the xAxis again
+          // call the xAxis again, b/c values changed
           g.call(xAxis);
           
-          // update map colors
+          
+          
+          // update map colors and redraw part of the boundaries
           svg.append("g")
 		    .selectAll("path")
 		      .data(d3.nest()
@@ -249,6 +251,11 @@
 		    .enter().append("path")
 		      .style("fill", function(d) { return d.key; })
 		      .attr("d", function(d) { return path({type: "FeatureCollection", features: d.values}); });
+          
+          svg.append("path")
+		      .datum(topojson.mesh(vermont, vermont.objects.counties, function(a, b) { return a !== b; }))
+		      .attr("class", "county-border")
+		      .attr("d", path);
         }
         
         
