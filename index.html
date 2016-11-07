@@ -3,9 +3,8 @@
   <head>
     <!-- Meta Tag -->
     <meta charset="utf-8">
-    <title>D3 Scatterplot</title>
     <!-- CSS Stylesheet -->
-    <style>
+    <style type="text/css">
     	svg {
 		  font: 10px sans-serif;
 		}
@@ -29,15 +28,13 @@
 		  stroke-opacity: .3;
 		}
     </style>
-    <!-- D3.js Source -->
-    
   </head>
   <body>
-  	<script type= "text/javascript" src="http://d3js.org/d3.v3.min.js"></script>
-    <script src="http://d3js.org/topojson.v1.min.js"></script>
+  	<script type= "text/javascript" src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="https://d3js.org/topojson.v1.min.js"></script>
     <h1 style = "text-align:center; color:#556B2F"><bold> Vermont Population Density, 2014 </bold></h1>
     <!-- Your D3.js code for making a Bar Graph -->
-    <script>
+    <script type="text/javascript">
     	var width = 960,
     		height = 1100;
 
@@ -122,6 +119,7 @@
 
 		d3.select(self.frameElement).style("height", height + "px");
     </script>
+    <br>
     <!-- Submission Info -->
     <div id="context"></div>
     <h4>Created by Karl Cassel </h4>
